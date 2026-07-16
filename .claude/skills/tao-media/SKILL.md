@@ -1,0 +1,65 @@
+---
+name: tao-media
+description: >
+  Tạo hình ảnh và video AI đẳng cấp điện ảnh từ một ý tưởng ngắn — gõ một ý là tạo ra luôn.
+  Use when the user asks to create/generate an image, picture, photo, artwork, video, clip,
+  animation, or visual content from an idea — in Vietnamese or English (tạo ảnh, tạo video,
+  vẽ, làm clip, generate image, make a video). Automatically enhances the idea into a
+  professional cinematic prompt, routes to the best model (Veo 3.1, Kling, FLUX.2, Imagen 4,
+  GPT Image), generates, and delivers the file.
+---
+
+# Tạo Media Đẳng Cấp (One-Idea → Instant Image/Video)
+
+Biến MỘT ý tưởng ngắn của người dùng thành hình ảnh/video chất lượng cao nhất, hoàn toàn tự động.
+KHÔNG hỏi lại người dùng trừ khi thiếu API key. Toàn bộ pipeline chạy trong một lượt.
+
+## Quy trình (làm đúng thứ tự, không bỏ bước)
+
+### Bước 1 — Phân loại ý tưởng
+Đọc ý tưởng và quyết định:
+- **video**: ý tưởng có chuyển động, thời gian, hành động, cảnh quay, hoặc người dùng nói
+  "video/clip/phim/quay/animation/chuyển động".
+- **image**: mặc định cho mọi trường hợp còn lại (chân dung, phong cảnh, logo, poster, sản phẩm…).
+- Nếu người dùng muốn CẢ HAI thì tạo ảnh trước, video sau.
+
+### Bước 2 — Nâng cấp prompt (bắt buộc — đây là thứ tạo nên "đẳng cấp")
+Đọc `references/prompt-guide.md` rồi viết lại ý tưởng thành prompt TIẾNG ANH chuyên nghiệp:
+- Ảnh: subject + action + environment + lighting + camera/lens + composition + style + mood + chi tiết chất liệu.
+- Video: thêm camera movement, pacing, và audio cues (Veo 3.1 tạo được âm thanh đồng bộ).
+- Giữ đúng ý gốc của người dùng, chỉ làm giàu chi tiết. Tên riêng/chữ cần hiển thị trong ảnh thì giữ nguyên văn, đặt trong ngoặc kép.
+- Chọn aspect ratio hợp nội dung: chân dung/TikTok → 9:16, phong cảnh/cinematic → 16:9, logo/avatar → 1:1, poster → 3:4.
+
+### Bước 3 — Sinh media
+Chạy script (Python 3, không cần cài thêm thư viện):
+
+```bash
+python3 .claude/skills/tao-media/scripts/generate.py "ENHANCED PROMPT" \
+  --type image|video --ar 16:9 [--duration 8] [--resolution 1080p] [--model <endpoint>] [--count N]
+```
+
+- Script tự chọn provider theo API key có sẵn: `FAL_KEY` (ưu tiên — nhiều model nhất) →
+  `GEMINI_API_KEY` (Imagen 4 / Veo 3.1) → `OPENAI_API_KEY` (GPT Image).
+- Script tự fallback qua chuỗi model nếu một endpoint lỗi. Chỉ dùng `--model` khi cần model
+  cụ thể (xem `references/models.md` để chọn theo nhu cầu: photorealism, typography, giá rẻ, tốc độ).
+- Video có thể mất 1–6 phút — cứ để script chạy (timeout mặc định của Bash tool có thể cần tăng lên 600000).
+- Dòng cuối stdout là JSON: `{"files": [...], "model": "...", "provider": "..."}`.
+
+### Bước 4 — Giao kết quả
+- Gửi file cho người dùng bằng tool `SendUserFile` với `display: "render"`.
+- Trả lời bằng ngôn ngữ của người dùng, nêu: model đã dùng, prompt đã nâng cấp (ngắn gọn),
+  và gợi ý 1–2 biến thể có thể thử tiếp (đổi style, đổi tỉ lệ, làm video từ ảnh…).
+
+## Khi thiếu API key
+Nếu script báo thiếu key, hướng dẫn ngắn gọn:
+1. **fal.ai** (khuyên dùng): đăng ký tại https://fal.ai/dashboard/keys → `export FAL_KEY="..."`
+2. **Google AI Studio**: https://aistudio.google.com/apikey → `export GEMINI_API_KEY="..."`
+3. **OpenAI**: https://platform.openai.com/api-keys → `export OPENAI_API_KEY="..."`
+
+Rồi dừng lại chờ người dùng cung cấp key — không tự bịa kết quả.
+
+## Nguyên tắc chất lượng
+- Không bao giờ gửi prompt thô của người dùng thẳng vào model — luôn nâng cấp (Bước 2).
+- Không hạ cấp model để tiết kiệm trừ khi người dùng yêu cầu "rẻ/nhanh".
+- Nội dung người thật, thương hiệu thật, hoặc nhạy cảm: từ chối lịch sự theo chính sách model.
+- Kết quả xấu/lỗi: thử lại 1 lần với prompt tinh chỉnh trước khi báo người dùng.
