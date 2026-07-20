@@ -22,6 +22,14 @@ vẽ logo cho quán phở tên "Phở Rồng"
 Claude sẽ: phân loại ảnh/video → viết prompt điện ảnh tiếng Anh (ánh sáng, ống kính,
 bố cục, âm thanh…) → gọi model tốt nhất → trả file về ngay trong chat.
 
+### ✨ Perfect Mode (mặc định)
+
+Không chỉ tạo một lần: Claude **tự mở ảnh xem lại, chấm điểm theo rubric 10 tiêu chí**
+(đúng ý, giải phẫu, chữ, bố cục, ánh sáng, artifact…), rồi **tự sửa prompt và tạo lại**
+cho đến khi đạt ≥ 9/10 (tối đa 3 vòng). Video "đẹp nhất" dùng pipeline chuyên nghiệp:
+tạo keyframe ảnh hoàn hảo trước → animate bằng Veo 3.1/Kling **image-to-video** —
+bạn chỉ gõ một câu, phần còn lại tự động đến phiên bản hoàn hảo nhất.
+
 ## Cài đặt (1 phút — chỉ cần 1 API key)
 
 Chọn MỘT trong ba (ưu tiên theo thứ tự):
@@ -51,11 +59,13 @@ Không cần `pip install` gì cả — script chạy bằng Python 3 thuần.
 
 ```
 .claude/skills/tao-media/
-├── SKILL.md                  # quy trình Claude thực hiện
+├── SKILL.md                  # quy trình Claude thực hiện (Perfect Mode)
 ├── scripts/generate.py       # generator đa provider (fal.ai / Gemini / OpenAI), stdlib thuần
+│                             # text-to-image, text-to-video, image-to-video, seed, negative
 └── references/
     ├── prompt-guide.md       # công thức prompt điện ảnh 8-9 lớp
-    └── models.md             # bảng định tuyến model + giá
+    ├── models.md             # bảng định tuyến model + giá
+    └── refine-checklist.md   # rubric 10 điểm + bảng sửa lỗi cho vòng lặp hoàn hảo
 ```
 
 Kết quả lưu tại `media-output/` (tự tạo).

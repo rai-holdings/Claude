@@ -9,10 +9,11 @@ description: >
   GPT Image), generates, and delivers the file.
 ---
 
-# Tạo Media Đẳng Cấp (One-Idea → Instant Image/Video)
+# Tạo Media Đẳng Cấp (One-Idea → Perfect Image/Video)
 
 Biến MỘT ý tưởng ngắn của người dùng thành hình ảnh/video chất lượng cao nhất, hoàn toàn tự động.
 KHÔNG hỏi lại người dùng trừ khi thiếu API key. Toàn bộ pipeline chạy trong một lượt.
+Mặc định chạy **Perfect Mode**: tạo → tự xem lại → tự chấm điểm → tự sửa → tạo lại đến khi đạt chuẩn.
 
 ## Quy trình (làm đúng thứ tự, không bỏ bước)
 
@@ -35,8 +36,13 @@ Chạy script (Python 3, không cần cài thêm thư viện):
 
 ```bash
 python3 .claude/skills/tao-media/scripts/generate.py "ENHANCED PROMPT" \
-  --type image|video --ar 16:9 [--duration 8] [--resolution 1080p] [--model <endpoint>] [--count N]
+  --type image|video --ar 16:9 [--duration 8] [--resolution 1080p] [--model <endpoint>] \
+  [--count N] [--image <keyframe.png>] [--seed N] [--negative "..."]
 ```
+
+- `--image`: ảnh tham chiếu (đường dẫn hoặc URL) → tự chuyển sang image-to-video (Veo 3.1/Kling).
+- `--seed`: giữ seed của bản đẹp khi chỉ sửa lỗi nhỏ (FLUX) — bảo toàn phần đã ưng.
+- `--negative`: negative prompt cho Kling.
 
 - Script tự chọn provider theo API key có sẵn: `FAL_KEY` (ưu tiên — nhiều model nhất) →
   `GEMINI_API_KEY` (Imagen 4 / Veo 3.1) → `OPENAI_API_KEY` (GPT Image).
@@ -45,10 +51,25 @@ python3 .claude/skills/tao-media/scripts/generate.py "ENHANCED PROMPT" \
 - Video có thể mất 1–6 phút — cứ để script chạy (timeout mặc định của Bash tool có thể cần tăng lên 600000).
 - Dòng cuối stdout là JSON: `{"files": [...], "model": "...", "provider": "..."}`.
 
-### Bước 4 — Giao kết quả
+### Bước 4 — Perfect Mode: tự chấm & tinh chỉnh (bắt buộc với ảnh)
+Đọc `references/refine-checklist.md` rồi lặp:
+1. Mở file ảnh vừa tạo bằng tool **Read** (Read hiển thị được ảnh) và chấm theo rubric 10 điểm.
+2. Đạt **≥ 9/10** → sang Bước 5. Chưa đạt → sửa prompt đúng theo bảng "cách sửa lỗi"
+   (chỉ sửa 1–3 điểm yếu nhất, giữ phần đã đẹp; FLUX có thể giữ `--seed`) và chạy lại script.
+3. Tối đa **3 vòng**. Hết vòng chưa đạt → giao bản điểm cao nhất, nói rõ hạn chế còn lại.
+- Với ảnh quan trọng (poster, logo, chân dung): tạo `--count 2` ngay vòng đầu và chấm cả hai, lấy bản tốt hơn làm nền tinh chỉnh.
+
+**Video chất lượng đỉnh (Perfect Video Pipeline)** — dùng khi người dùng muốn "đẹp nhất/hoàn hảo/quảng cáo":
+1. Tạo keyframe ẢNH theo vòng lặp trên cho đạt ≥ 9/10.
+2. Animate keyframe: `generate.py "MOTION + AUDIO prompt" --type video --image <keyframe>` —
+   script tự route sang Veo 3.1 / Kling image-to-video. Prompt lúc này chỉ tả chuyển động + âm thanh.
+3. Nếu có `ffmpeg`: trích vài frame của video ra chấm lại; lỗi nặng → chỉnh motion prompt, tạo lại (tối đa 2 vòng).
+Video nhanh/thường: gọi text-to-video thẳng (Bước 3) là đủ.
+
+### Bước 5 — Giao kết quả
 - Gửi file cho người dùng bằng tool `SendUserFile` với `display: "render"`.
-- Trả lời bằng ngôn ngữ của người dùng, nêu: model đã dùng, prompt đã nâng cấp (ngắn gọn),
-  và gợi ý 1–2 biến thể có thể thử tiếp (đổi style, đổi tỉ lệ, làm video từ ảnh…).
+- Trả lời bằng ngôn ngữ của người dùng, nêu: model đã dùng, số vòng tinh chỉnh + điểm rubric,
+  prompt đã nâng cấp (ngắn gọn), và gợi ý 1–2 biến thể tiếp theo (đổi style, đổi tỉ lệ, làm video từ ảnh…).
 
 ## Khi thiếu API key
 Nếu script báo thiếu key, hướng dẫn ngắn gọn:

@@ -44,6 +44,12 @@ FAL_VIDEO_CHAIN = [
     "fal-ai/kling-video/v2.1/master/text-to-video",
     "fal-ai/minimax/hailuo-02/standard/text-to-video",
 ]
+FAL_I2V_CHAIN = [
+    "fal-ai/veo3.1/image-to-video",
+    "fal-ai/kling-video/v3/pro/image-to-video",
+    "fal-ai/kling-video/v2.1/master/image-to-video",
+    "fal-ai/minimax/hailuo-02/standard/image-to-video",
+]
 
 VIDEO_HINTS = re.compile(
     r"\b(video|clip|phim|film|quay|animation|animate|chuy[eê]?n\s*đ[oộ]ng|"
@@ -93,12 +99,25 @@ def ext_from_url(url, fallback):
     return ext if ext and len(ext) <= 5 else fallback
 
 
+def image_ref_to_url(ref):
+    """Local image file -> base64 data URI; http(s)/data URLs pass through."""
+    if ref.startswith(("http://", "https://", "data:")):
+        return ref
+    p = Path(ref)
+    if not p.is_file():
+        raise RuntimeError(f"image not found: {ref}")
+    mime = mimetypes.guess_type(p.name)[0] or "image/png"
+    return f"data:{mime};base64,{base64.b64encode(p.read_bytes()).decode()}"
+
+
 # ---------------------------------------------------------------------------
 # fal.ai
 # ---------------------------------------------------------------------------
 def fal_payload(model, prompt, args):
     """Per-model-family payloads; unknown models get a safe generic body."""
     p = {"prompt": prompt}
+    if args.image:
+        p["image_url"] = image_ref_to_url(args.image)
     if "veo3" in model:
         p.update(
             aspect_ratio=args.ar,
@@ -108,6 +127,8 @@ def fal_payload(model, prompt, args):
         )
     elif "kling-video" in model:
         p.update(duration=str(min(max(args.duration, 5), 10)), aspect_ratio=args.ar)
+        if args.negative:
+            p["negative_prompt"] = args.negative
     elif "hailuo" in model:
         p.update(duration=str(6 if args.duration <= 6 else 10))
     elif "flux/dev" in model:
@@ -117,8 +138,12 @@ def fal_payload(model, prompt, args):
         }
         p.update(image_size=size_map.get(args.ar, "landscape_16_9"),
                  num_images=args.count)
+        if args.seed is not None:
+            p["seed"] = args.seed
     elif "flux" in model or "imagen" in model:
         p.update(aspect_ratio=args.ar, num_images=args.count)
+        if args.seed is not None:
+            p["seed"] = args.seed
     else:
         p.update(aspect_ratio=args.ar)
     return p
@@ -204,11 +229,19 @@ def gemini_image(prompt, args, key):
 
 def gemini_video(prompt, args, key):
     headers = {"x-goog-api-key": key}
+    instance = {"prompt": prompt}
+    if args.image:
+        p = Path(args.image)
+        if p.is_file():
+            instance["image"] = {
+                "bytesBase64Encoded": base64.b64encode(p.read_bytes()).decode(),
+                "mimeType": mimetypes.guess_type(p.name)[0] or "image/png",
+            }
     op = http(
         f"{GEMINI_BASE}/models/veo-3.1-generate-preview:predictLongRunning",
         method="POST",
         headers=headers,
-        body={"instances": [{"prompt": prompt}],
+        body={"instances": [instance],
               "parameters": {"aspectRatio": args.ar, "resolution": args.resolution}},
     )
     name = op["name"]
@@ -312,11 +345,17 @@ def main():
     ap.add_argument("--provider", choices=["auto", "fal", "gemini", "openai"],
                     default="auto")
     ap.add_argument("--no-audio", action="store_true")
+    ap.add_argument("--image", default=None,
+                    help="reference image (path or URL) -> image-to-video / editing")
+    ap.add_argument("--seed", type=int, default=None,
+                    help="seed for reproducible refinement (FLUX)")
+    ap.add_argument("--negative", default=None, help="negative prompt (Kling)")
     ap.add_argument("--out", default="media-output")
     args = ap.parse_args()
 
     if args.type == "auto":
-        args.type = "video" if VIDEO_HINTS.search(args.prompt) else "image"
+        args.type = ("video" if args.image or VIDEO_HINTS.search(args.prompt)
+                     else "image")
         log(f"[auto] detected type: {args.type}")
     if args.ar is None:
         args.ar = "16:9" if args.type == "video" else "1:1"
@@ -341,8 +380,12 @@ def main():
     for provider in order:
         try:
             if provider == "fal":
-                chain = ([args.model] if args.model else
-                         (FAL_VIDEO_CHAIN if args.type == "video" else FAL_IMAGE_CHAIN))
+                if args.model:
+                    chain = [args.model]
+                elif args.type == "video":
+                    chain = FAL_I2V_CHAIN if args.image else FAL_VIDEO_CHAIN
+                else:
+                    chain = FAL_IMAGE_CHAIN
                 for model in chain:
                     try:
                         files = fal_generate(model, args.prompt, args, fal_key)
