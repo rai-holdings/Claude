@@ -201,30 +201,84 @@ def fal_generate(model, prompt, args, key):
 # ---------------------------------------------------------------------------
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
+# (model, api_method) — newest first; older Imagen predict models are gated
+# for new users, so the chain falls through automatically.
+GEMINI_IMAGE_CHAIN = [
+    ("gemini-3-pro-image", "generateContent"),
+    ("gemini-3.1-flash-image", "generateContent"),
+    ("gemini-2.5-flash-image", "generateContent"),
+    ("imagen-4.0-ultra-generate-001", "predict"),
+    ("imagen-4.0-generate-001", "predict"),
+    ("imagen-4.0-fast-generate-001", "predict"),
+]
 
-def gemini_image(prompt, args, key):
-    body = {
-        "instances": [{"prompt": prompt}],
-        "parameters": {"sampleCount": args.count, "aspectRatio": args.ar},
-    }
-    r = http(
-        f"{GEMINI_BASE}/models/imagen-4.0-generate-001:predict",
-        method="POST",
-        headers={"x-goog-api-key": key},
-        body=body,
-    )
+
+def _save_b64_images(items, args):
+    """items: [(b64, mime)] -> saved file paths."""
     files = []
-    for i, pred in enumerate(r.get("predictions", [])):
-        b64 = pred.get("bytesBase64Encoded")
-        if not b64:
-            continue
-        ext = mimetypes.guess_extension(pred.get("mimeType", "image/png")) or ".png"
+    for i, (b64, mime) in enumerate(items):
+        ext = mimetypes.guess_extension(mime or "image/png") or ".png"
         dest = out_path(args.out, "image", ext, i)
         Path(dest).write_bytes(base64.b64decode(b64))
         files.append(dest)
-    if not files:
-        raise RuntimeError(f"Imagen returned no images: {json.dumps(r)[:500]}")
     return files
+
+
+def gemini_image_once(model, method, prompt, args, key):
+    headers = {"x-goog-api-key": key}
+    if method == "generateContent":
+        body = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "responseModalities": ["TEXT", "IMAGE"],
+                "imageConfig": {"aspectRatio": args.ar},
+            },
+        }
+        items = []
+        for _ in range(args.count):
+            r = http(f"{GEMINI_BASE}/models/{model}:generateContent",
+                     method="POST", headers=headers, body=body, timeout=300)
+            for cand in r.get("candidates", []):
+                for part in cand.get("content", {}).get("parts", []):
+                    blob = part.get("inlineData")
+                    if blob and blob.get("data"):
+                        items.append((blob["data"], blob.get("mimeType")))
+        files = _save_b64_images(items, args)
+    else:
+        r = http(
+            f"{GEMINI_BASE}/models/{model}:predict",
+            method="POST", headers=headers,
+            body={"instances": [{"prompt": prompt}],
+                  "parameters": {"sampleCount": args.count,
+                                 "aspectRatio": args.ar}},
+            timeout=300,
+        )
+        files = _save_b64_images(
+            [(p["bytesBase64Encoded"], p.get("mimeType"))
+             for p in r.get("predictions", []) if p.get("bytesBase64Encoded")],
+            args)
+    if not files:
+        raise RuntimeError(f"{model} returned no images")
+    return files
+
+
+def gemini_image(prompt, args, key):
+    chain = ([(args.model, "generateContent" if "gemini" in args.model
+               else "predict")] if args.model else GEMINI_IMAGE_CHAIN)
+    last = None
+    for model, method in chain:
+        try:
+            return gemini_image_once(model, method, prompt, args, key), model
+        except (urllib.error.HTTPError, RuntimeError) as e:
+            detail = ""
+            if isinstance(e, urllib.error.HTTPError):
+                try:
+                    detail = e.read().decode()[:200]
+                except Exception:
+                    pass
+            log(f"[gemini] {model} failed: {e} {detail} -> trying next")
+            last = e
+    raise RuntimeError(f"all gemini image models failed: {last}")
 
 
 def gemini_video(prompt, args, key):
@@ -405,12 +459,14 @@ def main():
             if provider == "gemini":
                 fn = gemini_video if args.type == "video" else gemini_image
                 model = ("veo-3.1-generate-preview" if args.type == "video"
-                         else "imagen-4.0-generate-001")
+                         else "gemini-image")
             else:
                 fn = openai_video if args.type == "video" else openai_image
                 model = "sora-2" if args.type == "video" else "gpt-image-1"
             files = fn(args.prompt, args,
                        gemini_key if provider == "gemini" else openai_key)
+            if isinstance(files, tuple):
+                files, model = files
             print(json.dumps({"files": files, "model": model, "provider": provider}))
             return
         except (urllib.error.HTTPError, urllib.error.URLError, RuntimeError,
