@@ -1,3 +1,19 @@
+# 🧰 Bộ skills Claude Code của repo này
+
+| Skill | Chức năng |
+|---|---|
+| [`tao-media`](.claude/skills/tao-media/SKILL.md) | Tạo ảnh/video AI điện ảnh từ một ý tưởng (Perfect Mode tự chấm & tinh chỉnh) |
+| [`lap-trinh-chuan`](.claude/skills/lap-trinh-chuan/SKILL.md) | Kỷ luật lập trình: tối giản 7 bậc → plan → TDD → root-cause debug → verify trước khi báo xong |
+| [`giao-dien-dep`](.claude/skills/giao-dien-dep/SKILL.md) | Thiết kế UI chống "AI slop": Design Read + 3 dials, checklist 1→10, animation Before/After, bounded QA |
+| [`kiem-dinh-skill`](.claude/skills/kiem-dinh-skill/SKILL.md) | Audit an ninh skill/plugin bên thứ ba trước khi cài (SAFE/CAUTION/AVOID) |
+
+Ba skill mới được **chưng cất từ đợt audit 22 skills cộng đồng 07/2026** (superpowers, ponytail,
+taste-skill, ui-ux-pro-max, impeccable, emilkowalski, caveman…) — lấy tinh hoa kỹ thuật, bỏ toàn bộ
+hooks/telemetry/auto-update: cả ba đều **thuần markdown, zero executable, zero network**.
+Báo cáo đầy đủ (A/B, verdict từng repo, checklist an ninh): [`docs/bao-cao-audit-22-skills-2026-07.md`](docs/bao-cao-audit-22-skills-2026-07.md)
+
+---
+
 # 🎬 tao-media — Gõ một ý tưởng, ra ngay ảnh & video đẳng cấp
 
 Skill cho Claude Code: biến **một câu ý tưởng** (tiếng Việt hoặc tiếng Anh) thành hình ảnh
