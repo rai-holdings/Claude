@@ -1,3 +1,12 @@
+# 🧰 Bộ skill cho Claude Code
+
+| Skill | Gõ gì | Được gì |
+|---|---|---|
+| 🎬 **tao-media** | `/tao-media <ý tưởng>` | Ảnh & video AI đẳng cấp điện ảnh từ một câu ý tưởng |
+| ✍️ **viet-lai-cau-lenh** | `/viet-lai-cau-lenh <nhu cầu>` | Câu lệnh viết lại theo framework mạnh nhất + cách triển khai |
+
+---
+
 # 🎬 tao-media — Gõ một ý tưởng, ra ngay ảnh & video đẳng cấp
 
 Skill cho Claude Code: biến **một câu ý tưởng** (tiếng Việt hoặc tiếng Anh) thành hình ảnh
@@ -77,3 +86,54 @@ python3 .claude/skills/tao-media/scripts/generate.py \
   "A majestic golden dragon soaring over Ha Long Bay at sunset..." \
   --type video --ar 16:9 --duration 8 --resolution 1080p
 ```
+
+---
+
+# ✍️ viet-lai-cau-lenh — Viết lại câu lệnh theo framework
+
+Mô tả nhu cầu bằng lời thường, Claude tự chọn framework mạnh nhất, viết lại thành câu lệnh
+copy-paste chạy được ngay, **kèm cách triển khai framework** để lần sau bạn tự viết được.
+
+## Dùng như thế nào
+
+```
+/viet-lai-cau-lenh tôi muốn tăng lượng đăng ký webinar nhưng chưa biết bắt đầu từ đâu
+```
+
+hoặc nói tự nhiên: *"viết lại giúp tôi câu lệnh này cho hiệu quả hơn"*, *"nên dùng framework nào?"*
+
+Claude trả về 3 phần:
+
+1. **Framework đã chọn** + một dòng lý do
+2. **Câu lệnh đã viết lại** — dán vào là chạy, không có chỗ trống bắt buộc điền
+3. **Cách triển khai framework** — bảng ánh xạ từng chữ cái → nội dung đã điền, 3 bước
+   dán/chạy/tinh chỉnh, và cách nâng cấp khi kết quả chưa đủ sâu
+
+## 9 framework có sẵn
+
+| Tình huống của bạn | Framework | Các chữ cái |
+|---|---|---|
+| Bắt đầu thứ gì mới | **RACE** | Role · Action · Context · Expectation |
+| Đang giải quyết vấn đề | **RISE** | Role · Identify · Steps · Expectation |
+| Cần kết quả đo lường cụ thể | **STAR** | Situation · Task · Action · Result |
+| Đang xây dựng chiến lược | **SOAP** | Subject · Objective · Action · Plan |
+| Đang nghiên cứu và test | **CLEAR** | Context · Limitations · Examples · Analysis · Refine |
+| Viết nội dung để bán hàng | **PASTOR** | Problem · Amplify · Story · Transformation · Offer · Response |
+| Pitch sản phẩm | **FAB** | Features · Advantages · Benefits |
+| Cần phân tích toàn cảnh | **5W1H** | Who · What · When · Where · Why · How |
+| Theo đuổi một mục tiêu | **GROW** | Goal · Reality · Options · Will |
+
+Mỗi framework trong `references/frameworks.md` có: khi nào dùng, template điền, ví dụ hoàn chỉnh,
+cách triển khai và lỗi thường gặp.
+
+## Cấu trúc
+
+```
+.claude/skills/viet-lai-cau-lenh/
+├── SKILL.md                  # quy trình: đọc nhu cầu → chọn framework → viết lại → kèm triển khai
+└── references/
+    ├── frameworks.md         # 9 framework: công thức, template, ví dụ, lỗi thường gặp
+    └── trien-khai.md         # bảng ánh xạ, 3 bước dán/chạy/tinh chỉnh, lộ trình học 8 bước
+```
+
+Không cần API key, không cần cài gì.
