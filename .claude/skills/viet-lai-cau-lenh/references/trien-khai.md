@@ -54,6 +54,16 @@ Chọn 1–2 cách hợp với nhu cầu, mỗi cách một dòng:
 
 ---
 
+## Mục 4 — ⚡ Bổ sung (đúng hai dòng)
+
+- **Cần bạn bổ sung**: 1–3 dữ kiện thật sẽ nâng chất lượng nhiều nhất — đúng những chỗ đang
+  để `[giả định: ...]`. Ưu tiên con số hiện tại, ràng buộc nguồn lực, và đối tượng cụ thể.
+- **Câu lệnh tiếp theo**: một câu ngắn cho bước sau khi có kết quả. Ví dụ: chẩn đoán xong bằng
+  **5W1H** → *"Lấy 3 nguyên nhân trên, viết lại theo GROW thành lộ trình 4 tuần"*; nghiên cứu
+  xong bằng **CLEAR** → *"Lấy phương án thắng, viết landing page theo PASTOR"*.
+
+---
+
 ## Lộ trình học 8 bước (dùng khi người dùng hỏi "học cái nào trước?")
 
 | Bước | Framework | Học để làm gì |

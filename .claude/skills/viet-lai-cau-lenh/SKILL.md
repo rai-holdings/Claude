@@ -14,6 +14,11 @@ description: >
 Nhận MỘT mô tả nhu cầu (dù mơ hồ) → chọn framework phù hợp nhất → viết lại thành câu lệnh
 hoàn chỉnh → **kèm cách triển khai framework** để người dùng tự dùng lại được lần sau.
 
+**Chế độ tự động (mặc định trong repo này)**: không cần gõ `/viet-lai-cau-lenh`. Cứ người dùng
+nhắn một yêu cầu công việc là chạy quy trình dưới đây, in kết quả, rồi **thực hiện luôn** câu lệnh
+đã viết lại — không dừng chờ xác nhận. Quy tắc bật/tắt và danh sách trường hợp bỏ qua nằm ở
+`CLAUDE.md` (mục "Chế độ viết lại câu lệnh tự động") và `.claude/hooks/tu-dong-viet-lai.md`.
+
 Không hỏi lại người dùng nếu có thể suy ra hợp lý. Thiếu dữ kiện thì **tự điền giả định**
 và đánh dấu rõ bằng `[giả định: ...]` để người dùng sửa — đừng bắt họ điền form.
 
@@ -57,7 +62,14 @@ chọn framework chính theo *kết quả cuối cùng người dùng cần*, v�
 2. **3 bước triển khai**: dán → chạy → tinh chỉnh, kèm câu lệnh tinh chỉnh mẫu.
 3. **Nâng cấp**: 1–2 cách ghép thêm framework khác hoặc siết yêu cầu khi kết quả chưa đủ sâu.
 
-### Bước 5 — Trả kết quả theo đúng bố cục này
+### Bước 5 — Bổ sung: chỉ ra chỗ còn thiếu và bước kế tiếp
+Sau phần triển khai, thêm mục **⚡ Bổ sung** gồm đúng hai dòng:
+- **Cần bạn bổ sung**: 1–3 dữ kiện thật (số liệu, tên khách hàng, ràng buộc) sẽ nâng chất lượng
+  nhiều nhất — chính là các chỗ đang để `[giả định: ...]`.
+- **Câu lệnh tiếp theo**: một câu lệnh ngắn cho bước sau khi có kết quả (ví dụ: chẩn đoán xong
+  bằng 5W1H → chuyển sang GROW để ra lộ trình).
+
+### Bước 6 — Trả kết quả theo đúng bố cục này
 
 ```
 🎯 Framework: <TÊN> — <một dòng vì sao hợp>
@@ -69,9 +81,13 @@ chọn framework chính theo *kết quả cuối cùng người dùng cần*, v�
 <bảng chữ cái → nội dung>
 <3 bước: dán / chạy / tinh chỉnh>
 <nâng cấp khi cần sâu hơn>
+
+⚡ Bổ sung
+<cần bạn bổ sung> + <câu lệnh tiếp theo>
 ```
 
 Giữ phần giải thích ngắn. Giá trị nằm ở câu lệnh mới, không nằm ở lời dẫn.
+Ở chế độ tự động: in xong bố cục trên thì làm luôn việc người dùng cần, không hỏi lại.
 
 ## Khi người dùng hỏi "nên dùng framework nào?"
 Trả lời bằng framework được chọn + lý do một dòng, rồi **vẫn viết lại luôn câu lệnh** cho họ.

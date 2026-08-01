@@ -94,20 +94,50 @@ python3 .claude/skills/tao-media/scripts/generate.py \
 Mô tả nhu cầu bằng lời thường, Claude tự chọn framework mạnh nhất, viết lại thành câu lệnh
 copy-paste chạy được ngay, **kèm cách triển khai framework** để lần sau bạn tự viết được.
 
-## Dùng như thế nào
+## Tự động — không cần gõ lệnh gì
+
+`CLAUDE.md` bật sẵn chế độ tự động: **cứ nhắn yêu cầu bình thường** là Claude tự chọn framework,
+viết lại câu lệnh, in cách triển khai, rồi **làm luôn** việc bạn cần.
 
 ```
-/viet-lai-cau-lenh tôi muốn tăng lượng đăng ký webinar nhưng chưa biết bắt đầu từ đâu
+tôi muốn tăng lượng đăng ký webinar nhưng chưa biết bắt đầu từ đâu
 ```
 
-hoặc nói tự nhiên: *"viết lại giúp tôi câu lệnh này cho hiệu quả hơn"*, *"nên dùng framework nào?"*
-
-Claude trả về 3 phần:
+Claude trả về 4 phần rồi bắt tay làm ngay:
 
 1. **Framework đã chọn** + một dòng lý do
-2. **Câu lệnh đã viết lại** — dán vào là chạy, không có chỗ trống bắt buộc điền
+2. **Câu lệnh đã viết lại** — dán vào là chạy; chỗ nào Claude tự suy ra thì ghi `[giả định: ...]`
 3. **Cách triển khai framework** — bảng ánh xạ từng chữ cái → nội dung đã điền, 3 bước
    dán/chạy/tinh chỉnh, và cách nâng cấp khi kết quả chưa đủ sâu
+4. **⚡ Bổ sung** — dữ kiện bạn nên cung cấp thêm + câu lệnh cho bước tiếp theo
+
+Câu xã giao ("ok", "tiếp tục"), câu trả lời cho câu hỏi của Claude, và lệnh slash thì được bỏ qua —
+không viết lại. Muốn tắt: nói **"tắt viết lại"**; bật lại: **"bật lại viết lại"**.
+
+Gõ `/viet-lai-cau-lenh <nhu cầu>` khi chỉ muốn lấy câu lệnh mà chưa cần Claude thực hiện.
+
+### Bật thêm hook (tuỳ chọn)
+
+`CLAUDE.md` đã đủ để chạy tự động. Nếu muốn nhắc lại quy tắc ở **mọi** tin nhắn, thêm hook này
+vào `.claude/settings.json` (mở `/hooks` để duyệt) — file nhắc đã có sẵn tại
+`.claude/hooks/tu-dong-viet-lai.md`:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -Rs '{hookSpecificOutput:{hookEventName:\"UserPromptSubmit\",additionalContext:.}}' \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/tu-dong-viet-lai.md\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 
 ## 9 framework có sẵn
 
